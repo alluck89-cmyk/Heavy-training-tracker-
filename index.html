@@ -269,6 +269,26 @@
   #pasteArea{width:100%;height:88px;margin:9px 0;background:var(--graphite);border:1px solid var(--line);color:var(--bone);font-family:var(--data);font-size:11px;padding:9px;border-radius:0;resize:vertical;}
   #pasteArea:focus{outline:none;border-color:var(--amber);}
 
+  .tdee{margin-top:14px;border:1px solid var(--line-soft);background:var(--panel);}
+  .tdee>summary{list-style:none;cursor:pointer;padding:12px 14px;font-family:var(--data);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);display:flex;justify-content:space-between;align-items:center;}
+  .tdee>summary::-webkit-details-marker{display:none;}
+  .tdee>summary .chev{transition:transform .2s;color:var(--muted);}
+  .tdee[open]>summary .chev{transform:rotate(90deg);}
+  .tdee-body{padding:4px 14px 15px;}
+  .tdee-sex{display:flex;gap:8px;margin-bottom:10px;}
+  .tdee-seg{flex:1;background:var(--graphite);border:1px solid var(--line);color:var(--muted);font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:13px;padding:10px 0;cursor:pointer;}
+  .tdee-seg.on{background:var(--amber);color:#0f1114;border-color:var(--amber);}
+  .tdee-grid{display:flex;gap:8px;}
+  .tdee-actlbl{display:block;font-family:var(--data);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:11px 0 5px;}
+  .tdee-select{width:100%;background:var(--graphite);border:1px solid var(--line);color:var(--bone);font-family:var(--data);font-size:13px;padding:10px;border-radius:0;}
+  .tdee-select:focus{outline:none;border-color:var(--amber);}
+  .tdee-out{margin-top:12px;}
+  .tdee-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line-soft);}
+  .tdee-row b{font-family:var(--data);color:var(--bone);font-weight:700;font-size:15px;}
+  .tdee-row.hot b{color:var(--amber);}
+  .tdee-note{font-size:11.5px;color:var(--muted-2);line-height:1.5;margin-top:9px;}
+  .tdee-hint{font-size:12.5px;color:var(--muted);padding:8px 0;}
+
   .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);
     background:var(--amber);color:#0f1114;font-family:var(--display);font-weight:600;letter-spacing:.1em;
     text-transform:uppercase;font-size:13px;padding:10px 20px;opacity:0;pointer-events:none;
@@ -351,6 +371,31 @@
         <button class="fuel-setbtn" id="saveTargets">Save</button>
       </div>
     </div>
+    <details class="tdee">
+      <summary>Estimate my target (TDEE) <span class="chev">›</span></summary>
+      <div class="tdee-body">
+        <div class="tdee-sex">
+          <button class="tdee-seg" id="sexM">Male</button>
+          <button class="tdee-seg" id="sexF">Female</button>
+        </div>
+        <div class="tdee-grid">
+          <div class="field2"><label>Age</label><input type="number" inputmode="numeric" id="tdAge"></div>
+          <div class="field2"><label>Height ft</label><input type="number" inputmode="numeric" id="tdFt"></div>
+          <div class="field2"><label>in</label><input type="number" inputmode="numeric" id="tdIn"></div>
+        </div>
+        <label class="tdee-actlbl">Activity level</label>
+        <select id="tdAct" class="tdee-select">
+          <option value="1.2">Sedentary — desk job, little exercise</option>
+          <option value="1.375">Light — 1–3 sessions/week</option>
+          <option value="1.55">Moderate — 3–5 sessions/week</option>
+          <option value="1.725">Very active — 6–7 sessions/week</option>
+          <option value="1.9">Athlete — hard daily training</option>
+        </select>
+        <div class="tdee-out" id="tdOut"></div>
+        <button class="backup-btn" id="tdUse">Use cut target</button>
+      </div>
+    </details>
+
     <div class="fuel-th" style="margin-top:18px">Today so far</div>
     <div class="fuel-today" id="fuelToday"></div>
     <div class="fuel-logwrap">
@@ -837,7 +882,7 @@ function renderBW(){
 /* ---------- settings, goal & nutrition ---------- */
 const SET_KEY = "hd_settings_v1";
 const NUT_KEY = "hd_nutrition_v1";
-let settings = { startWeight:245, goalWeight:200, calTarget:2500, proTarget:200 };
+let settings = { startWeight:245, goalWeight:200, calTarget:2500, proTarget:200, sex:"m", age:"", heightIn:72, activity:"1.55" };
 let nutrition = [];
 
 async function loadSettings(){
@@ -938,6 +983,7 @@ function fuelBar(consumed, target, unit, overBad){
 function renderFuel(){
   document.getElementById("calTarget").value = settings.calTarget;
   document.getElementById("proTarget").value = settings.proTarget;
+  renderTDEE();
   const tot = todaysTotal();
   document.getElementById("fuelToday").innerHTML =
     fuelBar(Math.round(tot.cals), settings.calTarget, "Calories", true) +
@@ -978,6 +1024,61 @@ function renderFuel(){
   list.querySelectorAll(".bw-del").forEach(b=>{
     b.onclick = async()=>{ nutrition = nutrition.filter(x=>x.id!==b.getAttribute("data-id")); await persistNutrition(); renderFuel(); };
   });
+}
+
+/* ---------- TDEE estimator ---------- */
+let lastCutTarget = null;
+function computeTDEE(){
+  const out=document.getElementById("tdOut");
+  const age=parseFloat(settings.age);
+  const heightIn=settings.heightIn||0;
+  if(isNaN(age)||age<=0||heightIn<=0){
+    out.innerHTML=`<div class="tdee-hint">Enter your age and height to estimate your target.</div>`;
+    lastCutTarget=null; return;
+  }
+  const wLb=currentWeight();
+  const kg=wLb*0.453592, cm=heightIn*2.54;
+  const sex=settings.sex||"m";
+  const bmr = 10*kg + 6.25*cm - 5*age + (sex==="f"? -161 : 5);
+  const tdee = bmr*(parseFloat(settings.activity)||1.55);
+  const maint = Math.round(tdee/10)*10;
+  lastCutTarget = Math.round((tdee-500)/10)*10;
+  out.innerHTML = `
+    <div class="tdee-row"><span>Weight used</span><b>${Math.round(wLb)} lb</b></div>
+    <div class="tdee-row"><span>Maintenance</span><b>${maint} kcal</b></div>
+    <div class="tdee-row hot"><span>Cut target · ~1 lb/wk</span><b>${lastCutTarget} kcal</b></div>
+    <div class="tdee-note">A ~500 kcal deficit. Recalc every few weeks — as your weight drops, maintenance drops with it.</div>`;
+}
+function renderTDEE(){
+  const sex = settings.sex || "m";
+  document.getElementById("sexM").classList.toggle("on", sex==="m");
+  document.getElementById("sexF").classList.toggle("on", sex==="f");
+  const ageEl=document.getElementById("tdAge");
+  if(document.activeElement!==ageEl) ageEl.value = settings.age!==""&&settings.age!=null ? settings.age : "";
+  const hin = settings.heightIn || 0;
+  const ftEl=document.getElementById("tdFt"), inEl=document.getElementById("tdIn");
+  if(document.activeElement!==ftEl) ftEl.value = hin ? Math.floor(hin/12) : "";
+  if(document.activeElement!==inEl) inEl.value = hin ? (hin%12) : "";
+  document.getElementById("tdAct").value = String(settings.activity || "1.55");
+  computeTDEE();
+}
+async function onTDEEChange(){
+  const age=parseFloat(document.getElementById("tdAge").value);
+  const ft=parseFloat(document.getElementById("tdFt").value);
+  const inch=parseFloat(document.getElementById("tdIn").value);
+  settings.age = isNaN(age)?"":age;
+  settings.heightIn = (isNaN(ft)?0:ft)*12 + (isNaN(inch)?0:inch);
+  settings.activity = document.getElementById("tdAct").value;
+  await persistSettings();
+  computeTDEE();
+}
+async function setSex(s){ settings.sex=s; await persistSettings(); renderTDEE(); }
+async function useTDEE(){
+  if(!lastCutTarget){ toast("Enter age & height first"); return; }
+  settings.calTarget = lastCutTarget;
+  await persistSettings();
+  toast("Target set to "+lastCutTarget);
+  renderFuel();
 }
 
 /* ---------- backup: export / import ---------- */
@@ -1098,6 +1199,11 @@ document.getElementById("importTextBtn").onclick = ()=>{
   let obj; try{ obj=JSON.parse(txt); }catch(e){ toast("That isn't valid backup text"); return; }
   if(confirm("Restore this backup? It replaces your current logs on this device.")) applyBackup(obj);
 };
+document.getElementById("sexM").onclick = ()=>setSex("m");
+document.getElementById("sexF").onclick = ()=>setSex("f");
+["tdAge","tdFt","tdIn"].forEach(id=>document.getElementById(id).addEventListener("input", onTDEEChange));
+document.getElementById("tdAct").addEventListener("change", onTDEEChange);
+document.getElementById("tdUse").onclick = useTDEE;
 
 /* ---------- init ---------- */
 (async function init(){
