@@ -236,11 +236,38 @@
   .fuel-rem{font-family:var(--data);font-size:9.5px;letter-spacing:.06em;color:var(--muted);margin-top:7px;text-transform:uppercase;}
   .fuel-logwrap{margin-top:14px;}
   .nut-pro{font-family:var(--data);font-size:11px;color:var(--muted);}
+  .nut-day{border:1px solid var(--line-soft);background:var(--panel);margin-top:12px;}
+  .nut-day-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line-soft);}
+  .nut-day-date{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:14px;}
+  .nut-day-tot{font-family:var(--data);font-size:12px;font-weight:700;color:var(--amber);}
+  .nut-item{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-top:1px solid var(--line-soft);}
+  .nut-item:first-of-type{border-top:none;}
+  .nut-item-v{font-family:var(--data);font-size:12px;color:var(--muted);}
 
   .logdate-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
   .logdate-lbl{font-family:var(--data);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
   .logdate{flex:1;background:var(--graphite);border:1px solid var(--line);color:var(--bone);font-family:var(--data);font-size:14px;font-weight:600;padding:9px 11px;border-radius:0;min-height:38px;}
   .logdate:focus{outline:none;border-color:var(--amber);background:#101216;}
+
+  .backup{margin:22px 0 4px;border:1px solid var(--line-soft);background:var(--panel);}
+  .backup>summary{list-style:none;cursor:pointer;padding:13px 14px;font-family:var(--data);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);display:flex;justify-content:space-between;align-items:center;}
+  .backup>summary::-webkit-details-marker{display:none;}
+  .backup>summary .chev{transition:transform .2s;color:var(--muted);}
+  .backup[open]>summary .chev{transform:rotate(90deg);}
+  .backup-body{padding:4px 14px 16px;}
+  .backup-note{font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:13px;}
+  .backup-btn{display:block;width:100%;background:var(--amber);color:#0f1114;border:none;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:14px;padding:13px 0;margin-bottom:9px;}
+  .backup-btn:active{background:var(--amber-deep);}
+  .backup-btn.ghost{background:var(--panel-2);color:var(--bone);border:1px solid var(--line);}
+  .backup-btn.ghost:active{background:var(--line);}
+  .backup-import{margin-top:6px;padding-top:13px;border-top:1px solid var(--line-soft);}
+  .backup-filelbl{display:block;font-family:var(--data);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  #importFile{width:100%;font-family:var(--data);font-size:12px;color:var(--muted);}
+  .backup-paste{margin-top:13px;}
+  .backup-paste>summary{cursor:pointer;font-family:var(--data);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);list-style:none;}
+  .backup-paste>summary::-webkit-details-marker{display:none;}
+  #pasteArea{width:100%;height:88px;margin:9px 0;background:var(--graphite);border:1px solid var(--line);color:var(--bone);font-family:var(--data);font-size:11px;padding:9px;border-radius:0;resize:vertical;}
+  #pasteArea:focus{outline:none;border-color:var(--amber);}
 
   .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);
     background:var(--amber);color:#0f1114;font-family:var(--display);font-weight:600;letter-spacing:.1em;
@@ -324,9 +351,10 @@
         <button class="fuel-setbtn" id="saveTargets">Save</button>
       </div>
     </div>
+    <div class="fuel-th" style="margin-top:18px">Today so far</div>
     <div class="fuel-today" id="fuelToday"></div>
     <div class="fuel-logwrap">
-      <div class="fuel-th">Log intake</div>
+      <div class="fuel-th">Add as you eat</div>
       <div class="logdate-row">
         <span class="logdate-lbl">Date</span>
         <input type="date" id="nutDate" class="logdate">
@@ -334,11 +362,29 @@
       <div class="bw-logrow">
         <input type="number" inputmode="numeric" id="nutCals" placeholder="Calories">
         <input type="number" inputmode="numeric" id="nutPro" placeholder="Protein g">
-        <button id="nutSave">Log</button>
+        <button id="nutSave">Add</button>
       </div>
     </div>
     <div class="bw-list" id="nutList"></div>
   </section>
+
+  <details class="backup">
+    <summary>Data &amp; backup <span class="chev">›</span></summary>
+    <div class="backup-body">
+      <p class="backup-note">Save a copy of all your logs to a file, or restore from one. Handy before a big change or to move to a new phone.</p>
+      <button class="backup-btn" id="exportBtn">Export backup</button>
+      <button class="backup-btn ghost" id="copyBtn">Copy to clipboard</button>
+      <div class="backup-import">
+        <label class="backup-filelbl" for="importFile">Restore from a backup file</label>
+        <input type="file" id="importFile" accept="application/json,.json">
+      </div>
+      <details class="backup-paste">
+        <summary>…or paste a backup</summary>
+        <textarea id="pasteArea" placeholder="Paste backup text here"></textarea>
+        <button class="backup-btn ghost" id="importTextBtn">Restore from text</button>
+      </details>
+    </div>
+  </details>
 
   <div class="foot">No rest day is wasted. — M.M.</div>
 </div>
@@ -838,32 +884,31 @@ function renderGoal(){
     <div class="goal-note">${lost>0?`${lost} lb down · `:``}${toGo>0?`${toGo} lb to go`:`goal reached — strong work`}</div>`;
 }
 
-function todaysNut(){
-  const now = new Date().toISOString();
-  return nutrition.find(e=>sameDay(e.date, now));
+function dayTotal(iso){
+  return nutrition.reduce((a,e)=>{
+    if(sameDay(e.date, iso)){ a.cals += (+e.cals||0); a.pro += (+e.pro||0); }
+    return a;
+  }, {cals:0, pro:0});
 }
+function todaysTotal(){ return dayTotal(new Date().toISOString()); }
 async function saveNutrition(){
   const c = parseFloat(document.getElementById("nutCals").value);
   const p = parseFloat(document.getElementById("nutPro").value);
   if(isNaN(c) && isNaN(p)){ toast("Enter an amount first"); return; }
   const iso = pickedISO("nutDate");
-  const existing = nutrition.find(e=>sameDay(e.date, iso));
-  const rec = { cals: isNaN(c)?0:c, pro: isNaN(p)?0:p };
-  if(existing){ existing.cals=rec.cals; existing.pro=rec.pro; }
-  else{ nutrition.push({ id:Date.now().toString(36), date:iso, ...rec }); }
+  nutrition.push({ id:Date.now().toString(36)+Math.random().toString(36).slice(2,5), date:iso, cals:isNaN(c)?0:c, pro:isNaN(p)?0:p });
   nutrition.sort((a,b)=>new Date(a.date)-new Date(b.date));
   await persistNutrition();
-  toast((existing?"Updated ":"Logged ")+fmtDate(iso));
+  document.getElementById("nutCals").value="";
+  document.getElementById("nutPro").value="";
+  document.getElementById("nutCals").focus();
+  const tot = dayTotal(iso);
+  toast(`Added · ${Math.round(tot.cals)} kcal so far`);
   renderFuel();
 }
 function prefillNutInputs(){
   const di=document.getElementById("nutDate");
-  if(!di) return;
-  if(!di.value) di.value=todayInputVal();
-  const iso=dateInputToISO(di.value);
-  const e=nutrition.find(x=>sameDay(x.date,iso));
-  document.getElementById("nutCals").value = e ? e.cals : "";
-  document.getElementById("nutPro").value = e ? e.pro : "";
+  if(di && !di.value) di.value=todayInputVal();
 }
 async function saveTargets(){
   const c = parseFloat(document.getElementById("calTarget").value);
@@ -893,28 +938,111 @@ function fuelBar(consumed, target, unit, overBad){
 function renderFuel(){
   document.getElementById("calTarget").value = settings.calTarget;
   document.getElementById("proTarget").value = settings.proTarget;
-  const t = todaysNut();
-  const cals = t?t.cals:0, pro = t?t.pro:0;
+  const tot = todaysTotal();
   document.getElementById("fuelToday").innerHTML =
-    fuelBar(cals, settings.calTarget, "Calories", true) +
-    fuelBar(pro, settings.proTarget, "Protein (g)", false);
+    fuelBar(Math.round(tot.cals), settings.calTarget, "Calories", true) +
+    fuelBar(Math.round(tot.pro), settings.proTarget, "Protein (g)", false);
   prefillNutInputs();
   const list = document.getElementById("nutList");
   if(!nutrition.length){
-    list.innerHTML = `<div class="bw-empty">No days logged yet. Enter today's calories and protein above.</div>`;
+    list.innerHTML = `<div class="bw-empty">Nothing logged yet. Add items above as you eat — they'll total up here by day.</div>`;
     return;
   }
+  const groups = {};
+  nutrition.forEach(e=>{
+    const d = new Date(e.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    (groups[key] = groups[key] || []).push(e);
+  });
   list.innerHTML = "";
-  [...nutrition].reverse().forEach(e=>{
-    const row = document.createElement("div");
-    row.className="bw-row";
-    row.innerHTML = `<span class="bw-rdate">${new Date(e.date).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}</span>
-      <span class="bw-rright"><span class="bw-rval">${e.cals||0} kcal</span><span class="nut-pro">${e.pro||0}g P</span><button class="bw-del" data-id="${e.id}" aria-label="Delete">✕</button></span>`;
-    list.appendChild(row);
+  Object.keys(groups).sort().reverse().forEach(key=>{
+    const items = groups[key];
+    const tc = items.reduce((s,e)=>s+(+e.cals||0),0);
+    const tp = items.reduce((s,e)=>s+(+e.pro||0),0);
+    const dlabel = new Date(items[0].date).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+    const itemRows = [...items].reverse().map(e=>`
+      <div class="nut-item">
+        <span class="nut-item-v">+${Math.round(+e.cals||0)} kcal · ${Math.round(+e.pro||0)}g P</span>
+        <button class="bw-del" data-id="${e.id}" aria-label="Delete item">✕</button>
+      </div>`).join("");
+    const day = document.createElement("div");
+    day.className="nut-day";
+    day.innerHTML = `
+      <div class="nut-day-head">
+        <span class="nut-day-date">${dlabel}</span>
+        <span class="nut-day-tot">${Math.round(tc)} kcal · ${Math.round(tp)}g P</span>
+      </div>
+      ${itemRows}`;
+    list.appendChild(day);
   });
   list.querySelectorAll(".bw-del").forEach(b=>{
     b.onclick = async()=>{ nutrition = nutrition.filter(x=>x.id!==b.getAttribute("data-id")); await persistNutrition(); renderFuel(); };
   });
+}
+
+/* ---------- backup: export / import ---------- */
+function buildBackup(){
+  return JSON.stringify({
+    app:"heavy-duty", version:1, exportedAt:new Date().toISOString(),
+    sessions, bodyweight, settings, nutrition
+  }, null, 2);
+}
+function exportBackup(){
+  const json = buildBackup();
+  try{
+    const blob = new Blob([json], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `heavy-duty-backup-${todayInputVal()}.json`;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+    toast("Backup downloaded");
+  }catch(e){
+    const pa=document.getElementById("pasteArea");
+    if(pa){ pa.value=json; toast("Copy the text below to save"); }
+  }
+}
+async function copyBackup(){
+  const json = buildBackup();
+  try{
+    await navigator.clipboard.writeText(json);
+    toast("Copied to clipboard");
+  }catch(e){
+    const ta=document.createElement("textarea");
+    ta.value=json; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    let ok=false; try{ ok=document.execCommand("copy"); }catch(_){}
+    ta.remove();
+    toast(ok?"Copied to clipboard":"Couldn't copy — use Export instead");
+  }
+}
+function applyBackup(obj){
+  if(!obj || typeof obj!=="object" ||
+     (!("sessions" in obj) && !("bodyweight" in obj) && !("nutrition" in obj))){
+    toast("Not a Heavy Duty backup"); return;
+  }
+  sessions   = Array.isArray(obj.sessions)?obj.sessions:[];
+  bodyweight = Array.isArray(obj.bodyweight)?obj.bodyweight:[];
+  nutrition  = Array.isArray(obj.nutrition)?obj.nutrition:[];
+  settings   = Object.assign({startWeight:245,goalWeight:200,calTarget:2500,proTarget:200}, obj.settings||{});
+  sessions.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  bodyweight.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  nutrition.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  Promise.all([persist(), persistBW(), persistSettings(), persistNutrition()]).then(()=>{
+    activeWorkout = suggestedNext();
+    renderTrain();
+    setTab(activeTab);
+    toast("Backup restored");
+  });
+}
+function importFromFile(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    let obj; try{ obj=JSON.parse(r.result); }catch(e){ toast("Couldn't read that file"); return; }
+    if(confirm("Restore this backup? It replaces your current logs on this device.")) applyBackup(obj);
+  };
+  r.onerror=()=>toast("Couldn't read that file");
+  r.readAsText(file);
 }
 
 /* ---------- toast ---------- */
@@ -953,7 +1081,23 @@ document.getElementById("bwInput").addEventListener("keydown",e=>{ if(e.key==="E
 document.getElementById("nutSave").onclick = saveNutrition;
 document.getElementById("saveTargets").onclick = saveTargets;
 document.getElementById("bwDate").addEventListener("change", prefillBWInput);
-document.getElementById("nutDate").addEventListener("change", prefillNutInputs);
+document.getElementById("nutDate").addEventListener("change", ()=>{
+  document.getElementById("nutCals").value="";
+  document.getElementById("nutPro").value="";
+});
+document.getElementById("exportBtn").onclick = exportBackup;
+document.getElementById("copyBtn").onclick = copyBackup;
+document.getElementById("importFile").addEventListener("change", e=>{
+  const f = e.target.files && e.target.files[0];
+  if(f) importFromFile(f);
+  e.target.value="";
+});
+document.getElementById("importTextBtn").onclick = ()=>{
+  const txt=document.getElementById("pasteArea").value.trim();
+  if(!txt){ toast("Paste a backup first"); return; }
+  let obj; try{ obj=JSON.parse(txt); }catch(e){ toast("That isn't valid backup text"); return; }
+  if(confirm("Restore this backup? It replaces your current logs on this device.")) applyBackup(obj);
+};
 
 /* ---------- init ---------- */
 (async function init(){
