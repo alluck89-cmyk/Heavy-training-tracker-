@@ -116,6 +116,7 @@
   .logdate{flex:1;background:var(--graphite);border:1px solid var(--line);color:var(--bone);font-family:var(--data);font-size:14px;font-weight:600;padding:9px 11px;border-radius:0;min-height:38px;}
   .logdate:focus{outline:none;border-color:var(--red);background:#101216;}
 
+  .goaledit{display:flex;gap:8px;align-items:flex-end;margin-top:10px;}
   .goal{border:1px solid var(--line);background:var(--panel);padding:15px 16px 14px;margin-top:18px;}
   .goal-row{display:flex;justify-content:space-between;align-items:flex-end;}
   .goal-end{display:flex;flex-direction:column;align-items:center;font-family:var(--data);}
@@ -261,6 +262,11 @@
   <!-- WEIGHT -->
   <section id="view-weight" style="display:none;">
     <div class="goal" id="goalStrip"></div>
+    <div class="goaledit">
+      <div class="field2"><label>Start weight</label><input type="number" inputmode="decimal" step="any" id="startW"></div>
+      <div class="field2"><label>Goal weight</label><input type="number" inputmode="decimal" step="any" id="goalW"></div>
+      <button class="fuel-setbtn" id="saveGoal">Set</button>
+    </div>
     <div class="bw-current">
       <div class="bw-num" id="bwNum">—</div>
       <div class="bw-label">Current bodyweight</div>
@@ -695,6 +701,9 @@ function bwChartSVG(){
 function bwDelta(c,p,l){ if(p==null) return ""; const d=+(c-p).toFixed(1); if(d===0) return `<span class="bw-d flat">±0 ${l}</span>`; return `<span class="bw-d ${d>0?'up':'down'}">${d>0?'▲':'▼'} ${Math.abs(d)} ${l}</span>`; }
 function renderBW(){
   renderGoal(); prefillBWInput();
+  const sw=document.getElementById("startW"), gw=document.getElementById("goalW");
+  if(sw && document.activeElement!==sw) sw.value=settings.startWeight;
+  if(gw && document.activeElement!==gw) gw.value=settings.goalWeight;
   const num=document.getElementById("bwNum"), del=document.getElementById("bwDeltas");
   if(!bodyweight.length){ num.textContent="—"; del.innerHTML=`<span class="bw-hint">No entries yet</span>`; }
   else{
@@ -760,6 +769,12 @@ async function saveTargets(){
   const c=parseFloat(document.getElementById("calTarget").value), p=parseFloat(document.getElementById("proTarget").value);
   if(!isNaN(c)&&c>0) settings.calTarget=c; if(!isNaN(p)&&p>0) settings.proTarget=p;
   await persistSet(); toast("Targets saved"); renderFuel();
+}
+async function saveGoal(){
+  const s=parseFloat(document.getElementById("startW").value), g=parseFloat(document.getElementById("goalW").value);
+  if(!isNaN(s)&&s>0) settings.startWeight=s;
+  if(!isNaN(g)&&g>0) settings.goalWeight=g;
+  await persistSet(); toast("Goal updated"); renderBW();
 }
 
 /* ---------- TDEE (carried over) ---------- */
@@ -852,6 +867,7 @@ document.getElementById("bwSave").onclick=saveBW;
 document.getElementById("bwInput").addEventListener("keydown",e=>{ if(e.key==="Enter") saveBW(); });
 document.getElementById("nutSave").onclick=saveNutrition;
 document.getElementById("saveTargets").onclick=saveTargets;
+document.getElementById("saveGoal").onclick=saveGoal;
 document.getElementById("bwDate").addEventListener("change",prefillBWInput);
 document.getElementById("nutDate").addEventListener("change",()=>{ document.getElementById("nutCals").value=""; document.getElementById("nutPro").value=""; });
 document.getElementById("exportBtn").onclick=exportBackup;
